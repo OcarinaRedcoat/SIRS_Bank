@@ -12,8 +12,19 @@ class Account(models.Model):
     email = models.CharField(max_length=200)
     balance = models.IntegerField()
     password = models.CharField(max_length=132) #44salt+88password
-    accountNumber = models.IntegerField(primary_key=True)
+    accountNumber = models.UUIDField(default = uuid.uuid4, primary_key=True)
 
     def __str__(self):
         return self.name + ' ' +str(self.balance) + ' ' +str(self.email) + ' ' + str(self.password) + ' ' + str(self.accountNumber)
 
+class Session(models.Model):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    sessionToken = models.CharField(max_length=88)
+    issuedIn = models.DateTimeField(auto_now_add=True, blank=True)
+
+
+#class Transaction(models.Model):
+#    sender = models.ForeignKey(Account, on_delete=models.CASCADE)
+#    receiver = models.ForeignKey(Account, on_delete=models.CASCADE)
+#    ammount = models.IntegerField()
+#    transaction_id = models.UUIDField(default=uuid.uuid4, primary_key=True)

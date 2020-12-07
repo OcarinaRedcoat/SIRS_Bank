@@ -5,8 +5,28 @@
         <title>SIRS Bank</title>
     </head>
     <body>
-        <h1>Hi {{name}}!</h1>
-        <p>You have {{balance}} euros in your account</p>
-        <p>Account number: {{acc_number}}</p>
+        <h1>Welcome to SIRS Bank {{name}}</h1>
     </body>
+    <form action= "{% url 'bank:information' %}" method="POST" >
+        {% csrf_token %}
+        <input type="submit" value ="Account information">
+    </form>
+    <form action= "{% url 'bank:deposit' %}" method="POST" >
+        {% csrf_token %}
+        <label for="ammount"> Ammount:</label>
+        <input type="number" id="ammount" name="ammount" min="0">
+        <input type="submit" value ="Deposit">
+    </form>
+    <form action= "{% url 'bank:transfer' %}" method="POST" >
+        {% csrf_token %}
+        <label for="ammount"> Ammount:</label>
+        <input type="number" id="ammount" name="ammount" min="0">
+        <label for="Account Number"> Account Number:</label>
+        <input type="text" id="accNumber" name="accNumber">
+        <input type="submit" value ="Transfer">
+    </form>
+    <form action= "{% url 'bank:logout' %}" method="POST" >
+        {% csrf_token %}
+        <input type="submit" value ="Log out">
+    </form>
 </html>

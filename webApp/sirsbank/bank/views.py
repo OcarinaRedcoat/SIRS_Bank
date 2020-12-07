@@ -1,13 +1,19 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 from .models import Account
+from .models import Session
+#from .models import Transaction
 
 import re
 import os
 import hashlib
 import base64
 import random
+import datetime
 
 # Create your views here.
 def index(request):
@@ -15,19 +21,155 @@ def index(request):
 
 def account(request, account_id):
     account = get_object_or_404(Account, accountNumber = account_id)
-    context = {'name': account.name, 'balance': '{:.2f}'.format(account.balance/100), 
-                'acc_number': '{:025d}'.format(account.accountNumber)}
-    return render(request, 'bank/account.html', context)
+    context = {'name': account.name}
+
+    try:
+        session = Session.objects.get(account = account)
+        rtokenId = request.COOKIES.get('id_token')
+        if(rtokenId == session.sessionToken and session.issuedIn + datetime.timedelta(minutes=30) > timezone.now()):
+            return render(request, 'bank/account.html', context)
+        else:
+            return HttpResponseRedirect(reverse('bank:login'))
+    except Session.DoesNotExist:
+        return HttpResponseRedirect(reverse('bank:login'))
+
 
 def login(request):
     return render(request, 'bank/login.html')
 
 def enter(request):
-    #login the users
-    return HttpResponseRedirect(reverse('bank:account', args=(1,)))
+    try:
+        request = request.POST
+        email = request.get('email')
+        print(email)
+        account = Account.objects.get(email = email)
+
+        userPassword = request.get('password')
+
+        saltNpassword = account.password
+        salt = saltNpassword[:44]
+        pasword = saltNpassword[44:]
+
+        salt = salt.encode('ascii')
+        salt = base64.b64decode(salt)
+
+        key = hashlib.pbkdf2_hmac('sha256', userPassword.encode('utf-8'), salt, 100000, dklen=64)
+
+        password_b64 = base64.b64encode(key)
+        password_string = password_b64.decode('ascii')
+
+        if(password_string != userPassword):
+            HttpResponse("Incorrect password")
+
+        idToken = os.urandom(64)
+        idToken = base64.b64encode(idToken)
+        idToken = idToken.decode('ascii')
+
+        #A session can already be there, delete it first
+        try:
+            session = Session.objects.get(account = account)
+            session.delete()
+        except Session.DoesNotExist: 
+            pass
+
+        newSession = Session()
+        newSession.account = account
+        newSession.sessionToken = idToken
+        newSession.save()
+
+        response = HttpResponseRedirect(reverse('bank:account', args=(account.accountNumber,)))
+        response.set_cookie('id_token', newSession.sessionToken)
+        return response
+    except Account.DoesNotExist:
+        return HttpResponse("Email not found")
+
 
 def register(request):
     return render(request, 'bank/register.html')
+
+def logout(request):
+    id_token = request.COOKIES.get('id_token')
+    try:    
+        session = Session.objects.get(sessionToken = id_token)
+        session.delete()
+        return HttpResponseRedirect(reverse('bank:index'))
+    except Session.DoesNotExist: 
+        pass
+
+def information(request):
+    id_token = request.COOKIES.get('id_token')
+    try:    
+        session = Session.objects.get(sessionToken = id_token)
+        acc = session.account
+        return HttpResponseRedirect(reverse('bank:info', args=(acc.accountNumber,)))
+    except Session.DoesNotExist: 
+        return HttpResponseRedirect(reverse('bank:index'))
+
+def info(request, account_id):
+    account = get_object_or_404(Account, accountNumber = account_id)
+    context = {'name': account.name, 'balance': '{:.2f}'.format(account.balance/100), 
+                'acc_number': account.accountNumber, 'email' : account.email}
+    try:
+        session = Session.objects.get(account = account)
+        rtokenId = request.COOKIES.get('id_token')
+        if(rtokenId == session.sessionToken and session.issuedIn + datetime.timedelta(minutes=30) > timezone.now()):
+            return render(request, 'bank/info.html', context)
+        else:
+            return HttpResponseRedirect(reverse('bank:login'))
+    except Session.DoesNotExist:
+        return HttpResponseRedirect(reverse('bank:login'))
+
+def deposit(request):
+    try:
+        rtokenId = request.COOKIES.get('id_token')
+        session = Session.objects.get(sessionToken=rtokenId)
+        if(rtokenId == session.sessionToken and session.issuedIn + datetime.timedelta(minutes=30) > timezone.now()):
+            r = request.POST
+            ammount = r.get('ammount')
+            acc = session.account
+            try:
+                acc.balance += int(ammount)*100
+            except ValueError:
+                return HttpResponse('Invalid ammount')
+            acc.save()
+            #t = Transaction()
+            response = HttpResponseRedirect(reverse('bank:account', args=(acc.accountNumber,)))            
+            return response
+        else:
+            return HttpResponseRedirect(reverse('bank:login'))
+    except Session.DoesNotExist:
+        return HttpResponseRedirect(reverse('bank:login'))
+
+def transfer(request):
+    try:
+        rtokenId = request.COOKIES.get('id_token')
+        session = Session.objects.get(sessionToken=rtokenId)
+        if(rtokenId == session.sessionToken and session.issuedIn + datetime.timedelta(minutes=30) > timezone.now()):
+            r = request.POST
+            ammount = r.get('ammount') 
+            transferTo = r.get('accNumber')
+            acc1 = session.account
+            try:
+                acc2 = Account.objects.get(accountNumber=transferTo)
+                try:
+                    int(ammount)
+                except ValueError:
+                    return HttpResponse('Invalid Ammount')
+                if(acc1.balance*100 < int(ammount)*100):
+                    return HttpResponse('No funds')
+                acc1.balance -= int(ammount)*100
+                acc2.balance += int(ammount)*100
+                acc1.save()
+                acc2.save()
+                response = HttpResponseRedirect(reverse('bank:account', args=(acc1.accountNumber,)))            
+                return response
+            except (Account.DoesNotExist, ValidationError) as e:
+                return HttpResponse('Invalid account number')
+        else:
+            return HttpResponseRedirect(reverse('bank:login'))
+    except Session.DoesNotExist:
+        return HttpResponseRedirect(reverse('bank:login'))
+
 
 def signup(request):
     r = request.POST
@@ -67,11 +209,17 @@ def signup(request):
     newAccount.balance = 0
     newAccount.password = final_password_string
 
-    #iban = '{:025d}'.format(random.randint(0, 9999999999999999999999999))
-    iban = random.randint(0,9999999999999999999999999)
-    newAccount.accountNumber = iban
-
     newAccount.save()
+    
+    idToken = os.urandom(64)
+    idToken = base64.b64encode(idToken)
+    idToken = idToken.decode('ascii')
 
-    #singup the user
-    return HttpResponseRedirect(reverse('bank:account', args=(iban,)))
+    newSession = Session()
+    newSession.account = newAccount
+    newSession.sessionToken = idToken
+    newSession.save()
+
+    response = HttpResponseRedirect(reverse('bank:account', args=(newAccount.accountNumber,)))
+    response.set_cookie('id_token', newSession.sessionToken)
+    return response

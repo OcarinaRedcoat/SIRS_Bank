@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>SIRS Bank</title>
+    </head>
+    <body>
+        <h1>Account details</h1>
+        <p>Balance: {{balance}} euros</p>
+        <p>Account number: {{acc_number}}</p>
+        <p>Registred email: {{email}}</p>
+    </body>
+    <form action= "{% url 'bank:logout' %}" method="POST" >
+        {% csrf_token %}
+        <input type="submit" value ="Log out">
+    </form>
+</html>
