@@ -19,9 +19,9 @@
         {% else %}
         <p>No transactions</p>
         {% endif %}
-        <form action= "{% url 'bank:logout' %}" method="POST" >
+        <form action= "{% url 'bank:back' %}" method="POST" >
             {% csrf_token %}
-            <input type="submit" value ="Log out">
+            <input type="submit" value ="Go Back">
         </form>
     </body>
 </html>

@@ -146,6 +146,20 @@ def deposit(request):
     except Session.DoesNotExist:
         return HttpResponseRedirect(reverse('bank:login'))
 
+
+def back(request):
+    try:
+        rtokenId = request.COOKIES.get('id_token')
+        session = Session.objects.get(sessionToken=rtokenId)
+        if(rtokenId == session.sessionToken and session.issuedIn + datetime.timedelta(minutes=30) > timezone.now()):
+            acc = session.account
+            return HttpResponseRedirect(reverse('bank:account', args=(acc.accountNumber,)))
+        else:
+            return HttpResponseRedirect(reverse('bank:login'))
+    except Session.DoesNotExist:
+        return HttpResponseRedirect(reverse('bank:login'))
+
+
 def transfer(request):
     try:
         rtokenId = request.COOKIES.get('id_token')

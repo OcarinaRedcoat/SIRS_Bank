@@ -14,5 +14,6 @@ urlpatterns = [
     path('information', views.information, name='information'),
     path('info/<uuid:account_id>/', views.info, name='info'),
     path('deposit', views.deposit, name='deposit'),
-    path('transfer', views.transfer, name='transfer')
+    path('transfer', views.transfer, name='transfer'),
+    path('back', views.back, name='back')
 ]
