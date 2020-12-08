@@ -15,7 +15,7 @@ class Account(models.Model):
     accountNumber = models.UUIDField(default = uuid.uuid4, primary_key=True)
 
     def __str__(self):
-        return self.name + ' ' +str(self.balance) + ' ' +str(self.email) + ' ' + str(self.password) + ' ' + str(self.accountNumber)
+        return str(self.accountNumber)
 
 class Session(models.Model):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
@@ -23,8 +23,10 @@ class Session(models.Model):
     issuedIn = models.DateTimeField(auto_now_add=True, blank=True)
 
 
-#class Transaction(models.Model):
-#    sender = models.ForeignKey(Account, on_delete=models.CASCADE)
-#    receiver = models.ForeignKey(Account, on_delete=models.CASCADE)
-#    ammount = models.IntegerField()
-#    transaction_id = models.UUIDField(default=uuid.uuid4, primary_key=True)
+class Transaction(models.Model):
+    sender = models.ForeignKey(Account, related_name="sender", on_delete=models.CASCADE)
+    receiver = models.ForeignKey(Account, related_name="receiver", on_delete=models.CASCADE)
+    ammount = models.IntegerField()
+    transaction_id = models.UUIDField(default=uuid.uuid4, primary_key=True)
+    def __str__(self):
+        return str(self.sender) + str(self.receiver)

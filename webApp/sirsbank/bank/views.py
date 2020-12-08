@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import Account
 from .models import Session
-#from .models import Transaction
+from .models import Transaction
 
 import re
 import os
@@ -107,10 +107,12 @@ def information(request):
 
 def info(request, account_id):
     account = get_object_or_404(Account, accountNumber = account_id)
-    context = {'name': account.name, 'balance': '{:.2f}'.format(account.balance/100), 
-                'acc_number': account.accountNumber, 'email' : account.email}
     try:
         session = Session.objects.get(account = account)
+        transaction_list =  Transaction.objects.filter(sender=account) | Transaction.objects.filter(receiver=account)
+        print(transaction_list)
+        context = {'name': account.name, 'balance': '{:.2f}'.format(account.balance/100), 
+                'acc_number': account.accountNumber, 'email' : account.email, 'transaction_list': transaction_list}
         rtokenId = request.COOKIES.get('id_token')
         if(rtokenId == session.sessionToken and session.issuedIn + datetime.timedelta(minutes=30) > timezone.now()):
             return render(request, 'bank/info.html', context)
@@ -132,7 +134,11 @@ def deposit(request):
             except ValueError:
                 return HttpResponse('Invalid ammount')
             acc.save()
-            #t = Transaction()
+            t = Transaction()
+            t.sender = acc
+            t.receiver = acc
+            t.ammount = int(ammount)*100
+            t.save()
             response = HttpResponseRedirect(reverse('bank:account', args=(acc.accountNumber,)))            
             return response
         else:
@@ -161,6 +167,11 @@ def transfer(request):
                 acc2.balance += int(ammount)*100
                 acc1.save()
                 acc2.save()
+                t = Transaction()
+                t.sender = acc1
+                t.receiver = acc2
+                t.ammount = int(ammount)*100
+                t.save()
                 response = HttpResponseRedirect(reverse('bank:account', args=(acc1.accountNumber,)))            
                 return response
             except (Account.DoesNotExist, ValidationError) as e:

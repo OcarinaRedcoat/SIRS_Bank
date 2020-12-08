@@ -9,9 +9,19 @@
         <p>Balance: {{balance}} euros</p>
         <p>Account number: {{acc_number}}</p>
         <p>Registred email: {{email}}</p>
+        <p>Transactions:</p>
+        {% if transaction_list %}
+        <ul>
+            {% for transaction in transaction_list %}
+            <li><p>Sender: {{transaction.sender.accountNumber}} Receiver: {{transaction.receiver.accountNumber}} Ammount: {% widthratio transaction.ammount 100 1%}</p></li>
+        {% endfor %}
+        </ul>
+        {% else %}
+        <p>No transactions</p>
+        {% endif %}
+        <form action= "{% url 'bank:logout' %}" method="POST" >
+            {% csrf_token %}
+            <input type="submit" value ="Log out">
+        </form>
     </body>
-    <form action= "{% url 'bank:logout' %}" method="POST" >
-        {% csrf_token %}
-        <input type="submit" value ="Log out">
-    </form>
 </html>
