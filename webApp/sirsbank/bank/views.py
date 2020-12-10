@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from .models import Account
 from .models import Session
 from .models import Transaction
+from .models import RandomNumber
 
 import re
 import os
@@ -91,7 +92,11 @@ def enter(request):
 
 
 def register(request):
-    return render(request, 'bank/register.html')
+    number = ''.join(["{}".format(random.randint(0, 9))for num in range(0, 6)])
+    context = {'number': number}
+    randomNum = RandomNumber()
+    randomNum.number = number
+    return render(request, 'bank/register.html', context)
 
 def logout(request):
     id_token = request.COOKIES.get('id_token')
@@ -226,6 +231,23 @@ def signup(request):
     #check if the user is already registred
     if(Account.objects.filter(email=r.get('email')).exists()):
         return HttpResponse("Email already registred")
+
+
+    try:
+        controlNumber = RandomNumber.objects.get(number= r.get('number'))
+        if (controlNumber.issuedIn + datetime.timedelta(minutes=5) > timezone.now()):
+            return HttpResponse("Control number expired")
+        if (controlNumber != r.get('number')):
+            return HttpResponse("Invalid number")
+#######Inserir controlo aqui###################
+#######O controlNumber tem o número que queremos verificar###########
+######Se falhar o control dar return HttpResponse("Numbers dont match")###
+#######Depois lá em baixo apóes fazer newAccount = Account()####
+#######Fazer newAccount.androidID = androidID que veio da mensagem#####
+#######Sugeria a funcao que verifica devolver o androidID e receber o numero####
+#######E depois lá dentro faz a verificaçao se são iguais#####
+    except RandomNumber.DoesNotExist:
+        return HttpResponse("Control number incorrect")
 
     salt = os.urandom(32)
     key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000, dklen=64)

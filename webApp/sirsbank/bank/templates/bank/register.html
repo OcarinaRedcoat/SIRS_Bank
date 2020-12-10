@@ -17,8 +17,10 @@
             <input type="password" id="password" name="password">
             <label for="password2"> Confirm password:</label>
             <input type="password" id="password2" name="password2">
+            <input type="hidden" id="number" name="number" value={{number}}>
             <input type="submit" value ="Sign Up">
         </form> 
+        <h1>Insert this verification code in your app after pressing sign up: {{number}}</h1>
         <p><a href = "{% url 'bank:index'%}">Homepage</a></p>
     </body>
 </html>

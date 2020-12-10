@@ -31,3 +31,7 @@ class Transaction(models.Model):
     transaction_id = models.UUIDField(default=uuid.uuid4, primary_key=True)
     def __str__(self):
         return str(self.sender) + str(self.receiver)
+
+class RandomNumber(models.Model):
+    number = models.CharField(max_length=6)
+    issuedIn = models.DateTimeField(auto_now_add=True, blank=True)
