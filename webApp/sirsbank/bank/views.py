@@ -135,6 +135,8 @@ def deposit(request):
             r = request.POST
             ammount = r.get('ammount')
             acc = session.account
+            if(twoFactorAuth(acc.androidID) == False):
+                    return HttpResponse("Smartphone Authentication Failed")
             try:
                 acc.balance += int(ammount)*100
             except ValueError:
