@@ -60,16 +60,12 @@ def enter(request):
         password_b64 = base64.b64encode(key)
         password_string = password_b64.decode('ascii')
 
-        print(password_string)
-        print(password)
-
         if(password_string != password):
             return HttpResponse("Incorrect password")
 
-        acc = Account.objects.get(email=email)
-        userAndroidID = acc.androidID
-        print(userAndroidID)
-        twoFactorAuth(userAndroidID) #FIXME: Uses socket
+        userAndroidID = account.androidID
+        if(twoFactorAuth(userAndroidID) == False):
+            return HttpResponse("Smartphone Authentication Failed")
 
         idToken = os.urandom(64)
         idToken = base64.b64encode(idToken)
@@ -269,21 +265,22 @@ def twoFactorAuth(userAndroidID):
     finally:
         pass
     client.listen(10) # how many connections can it receive at one time
-    print("Start Listening...")
 
     while True:
         conn, addr = client.accept()
-        print("client with address: ", addr, " is connected.")
+        
         data = conn.recv(1024)
-        dataJson = json.loads(data)
-        print(dataJson)
-        print("Recieved this data: <", data, "> from the client.")
-        #if(androidID == data[androidID]):
-        #   client.close()
-        #   break
-        #else:
-        #   Mandar erro qualquer
-        break
+        print(data)
 
-    client.close()
+        data_decoded = data.decode("utf-8")
+        print(data_decoded)
+        dataJson = json.loads(data_decoded)
+        print(dataJson['androidID'])
+        #print(dataJson[androidID])
+
+        if(userAndroidID == dataJson['androidID']):
+            client.close()
+            return True
+        else:
+           return False
 
