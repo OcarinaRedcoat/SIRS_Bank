@@ -15,6 +15,9 @@ import base64
 import random
 import datetime
 
+import socket
+import json
+
 # Create your views here.
 def index(request):
     return render(request, 'bank/index.html')
@@ -41,7 +44,6 @@ def enter(request):
     try:
         request = request.POST
         email = request.get('email')
-        print(email)
         account = Account.objects.get(email = email)
 
         userPassword = request.get('password')
@@ -60,6 +62,11 @@ def enter(request):
 
         if(password_string != userPassword):
             HttpResponse("Incorrect password")
+
+        acc = Account.objects.get(email=email)
+        userAndroidID = acc.androidID
+        print(userAndroidID)
+        twoFactorAuth(userAndroidID) #FIXME: Uses socket
 
         idToken = os.urandom(64)
         idToken = base64.b64encode(idToken)
@@ -248,3 +255,32 @@ def signup(request):
     response = HttpResponseRedirect(reverse('bank:account', args=(newAccount.accountNumber,)))
     response.set_cookie('id_token', newSession.sessionToken)
     return response
+
+def twoFactorAuth(userAndroidID):
+    print(userAndroidID)
+    host, port = "192.168.1.118", 1234
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+        client.bind((host, port))
+    finally:
+        pass
+    client.listen(10) # how many connections can it receive at one time
+    print("Start Listening...")
+
+    while True:
+        conn, addr = client.accept()
+        print("client with address: ", addr, " is connected.")
+        data = conn.recv(1024)
+        dataJson = json.loads(data)
+        print(dataJson)
+        print("Recieved this data: <", data, "> from the client.")
+        #if(androidID == data[androidID]):
+        #   client.close()
+        #   break
+        #else:
+        #   Mandar erro qualquer
+        break
+
+    client.close()
+

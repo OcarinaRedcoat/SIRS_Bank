@@ -13,6 +13,7 @@ class Account(models.Model):
     balance = models.IntegerField()
     password = models.CharField(max_length=132) #44salt+88password
     accountNumber = models.UUIDField(default = uuid.uuid4, primary_key=True)
+    androidID = models.CharField(max_length=200, default="")
 
     def __str__(self):
         return str(self.accountNumber)
