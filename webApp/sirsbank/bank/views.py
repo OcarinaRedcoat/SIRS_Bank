@@ -183,7 +183,7 @@ def transfer(request):
                     int(ammount)
                 except ValueError:
                     return HttpResponse('Invalid Ammount')
-                if(twoFactorAuth(userAndroidID) == False):
+                if(twoFactorAuth(acc1.androidID) == False):
                     return HttpResponse("Smartphone Authentication Failed")
                 if(acc1.balance*100 < int(ammount)*100):
                     return HttpResponse('No funds')
