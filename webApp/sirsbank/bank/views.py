@@ -48,7 +48,7 @@ def enter(request):
 
         saltNpassword = account.password
         salt = saltNpassword[:44]
-        pasword = saltNpassword[44:]
+        password = saltNpassword[44:]
 
         salt = salt.encode('ascii')
         salt = base64.b64decode(salt)
@@ -58,8 +58,11 @@ def enter(request):
         password_b64 = base64.b64encode(key)
         password_string = password_b64.decode('ascii')
 
-        if(password_string != userPassword):
-            HttpResponse("Incorrect password")
+        print(password_string)
+        print(password)
+
+        if(password_string != password):
+            return HttpResponse("Incorrect password")
 
         idToken = os.urandom(64)
         idToken = base64.b64encode(idToken)
