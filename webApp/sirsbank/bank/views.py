@@ -19,6 +19,8 @@ import datetime
 import socket
 import json
 
+flag = False
+
 # Create your views here.
 def index(request):
     return render(request, 'bank/index.html')
@@ -143,10 +145,12 @@ def deposit(request):
             if(twoFactorAuth(acc.androidID) == False):
                     return HttpResponse("Smartphone Authentication Failed")
             try:
+                print("1")
                 acc.balance += int(ammount)*100
             except ValueError:
                 return HttpResponse('Invalid ammount')
             acc.save()
+            print("2")
             t = Transaction()
             t.sender = acc
             t.receiver = acc
@@ -283,11 +287,13 @@ def signup(request):
 
 def twoFactorAuth(userAndroidID):
     print(userAndroidID)
-    host, port = "192.168.1.118", 1234
+    host, port = "192.168.43.67", 1234
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+    client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
         client.bind((host, port))
+    #except:
+        #client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     finally:
         pass
     client.listen(10) # how many connections can it receive at one time
@@ -306,6 +312,7 @@ def twoFactorAuth(userAndroidID):
 
         if(userAndroidID == dataJson['androidID']):
             client.close()
+            print("2fa")
             return True
         else:
            return False
