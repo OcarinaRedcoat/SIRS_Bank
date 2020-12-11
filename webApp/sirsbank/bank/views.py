@@ -240,16 +240,17 @@ def signup(request):
     try:
         controlNumber = RandomNumber.objects.get(number= r.get('number'))
         if (controlNumber.issuedIn + datetime.timedelta(minutes=5) > timezone.now()):
+            controlNumber.delete()
             return HttpResponse("Control number expired")
-        if (controlNumber != r.get('number')):
+        if (controlNumber.number != r.get('number')):
+            controlNumber.delete()
             return HttpResponse("Invalid number")
-#######Inserir controlo aqui###################
-#######O controlNumber tem o número que queremos verificar###########
-######Se falhar o control dar return HttpResponse("Numbers dont match")###
-#######Depois lá em baixo apóes fazer newAccount = Account()####
-#######Fazer newAccount.androidID = androidID que veio da mensagem#####
-#######Sugeria a funcao que verifica devolver o androidID e receber o numero####
-#######E depois lá dentro faz a verificaçao se são iguais#####
+
+        androidID = twoFactorAuthRegister(controlNumber.number)
+        if (androidID is None ):
+            controlNumber.delete()
+            return HttpResponse("Numbers dont match")
+
     except RandomNumber.DoesNotExist:
         return HttpResponse("Control number incorrect")
 
@@ -267,6 +268,7 @@ def signup(request):
     newAccount = Account()
     newAccount.name = r.get('name')
     newAccount.email = r.get('email')
+    newAccount.androidID = androidID
     newAccount.balance = 0
     newAccount.password = final_password_string
 
@@ -314,4 +316,32 @@ def twoFactorAuth(userAndroidID):
             return True
         else:
            return False
+
+
+def twoFactorAuthRegister(controlNumber):
+    host, port = "192.168.43.67", 1234
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        client.bind((host, port))
+    finally:
+        pass
+    client.listen(10) # how many connections can it receive at one time
+
+    while True:
+        conn, addr = client.accept()
+        
+        data = conn.recv(1024)
+        print(data)
+
+        data_decoded = data.decode("utf-8")
+        print(data_decoded)
+        dataJson = json.loads(data_decoded)
+
+        if(controlNumber == dataJson['registerCode']):
+            client.close()
+            return dataJson['androidID']
+        else:
+           return Null
+
 
