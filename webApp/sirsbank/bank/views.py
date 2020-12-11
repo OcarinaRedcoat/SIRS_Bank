@@ -289,7 +289,7 @@ def signup(request):
 
 def twoFactorAuth(userAndroidID):
     print(userAndroidID)
-    host, port = "192.168.1.125", 1234
+    host, port = "192.168.1.131", 1234
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
@@ -319,7 +319,7 @@ def twoFactorAuth(userAndroidID):
 
 
 def twoFactorAuthRegister(controlNumber):
-    host, port = "192.168.43.67", 1234
+    host, port = "192.168.1.131", 1234
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
