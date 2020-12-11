@@ -87,7 +87,7 @@ def enter(request):
         newSession.save()
 
         response = HttpResponseRedirect(reverse('bank:account', args=(account.accountNumber,)))
-        response.set_cookie('id_token', newSession.sessionToken)
+        response.set_cookie(key='id_token', value=newSession.sessionToken, httponly=True, samesite='Strict')
         return response
     except Account.DoesNotExist:
         return HttpResponse("Email not found")
@@ -98,6 +98,7 @@ def register(request):
     context = {'number': number}
     randomNum = RandomNumber()
     randomNum.number = number
+    randomNum.save()
     return render(request, 'bank/register.html', context)
 
 def logout(request):
@@ -238,8 +239,11 @@ def signup(request):
 
 
     try:
+        print(r.get('number'))
         controlNumber = RandomNumber.objects.get(number= r.get('number'))
-        if (controlNumber.issuedIn + datetime.timedelta(minutes=5) > timezone.now()):
+        print(controlNumber.issuedIn + datetime.timedelta(minutes=5))
+        print(timezone.now())
+        if (controlNumber.issuedIn + datetime.timedelta(minutes=5) < timezone.now()):
             controlNumber.delete()
             return HttpResponse("Control number expired")
         if (controlNumber.number != r.get('number')):
@@ -284,12 +288,14 @@ def signup(request):
     newSession.save()
 
     response = HttpResponseRedirect(reverse('bank:account', args=(newAccount.accountNumber,)))
-    response.set_cookie('id_token', newSession.sessionToken)
+    response.set_cookie(key='id_token', value=newSession.sessionToken, httponly=True, samesite='Strict')
     return response
 
 def twoFactorAuth(userAndroidID):
     print(userAndroidID)
-    host, port = "192.168.1.131", 1234
+
+    host, port = "194.210.61.100", 1234
+
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
@@ -319,7 +325,9 @@ def twoFactorAuth(userAndroidID):
 
 
 def twoFactorAuthRegister(controlNumber):
-    host, port = "192.168.1.131", 1234
+
+    host, port = "194.210.61.100", 1234
+
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
