@@ -265,13 +265,11 @@ def signup(request):
 
 def twoFactorAuth(userAndroidID):
     print(userAndroidID)
-    host, port = "192.168.43.67", 1234
+    host, port = "192.168.1.125", 1234
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
         client.bind((host, port))
-    #except:
-        #client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     finally:
         pass
     client.listen(10) # how many connections can it receive at one time
